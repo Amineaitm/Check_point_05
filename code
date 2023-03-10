@@ -1,0 +1,105 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, confusion_matrix, roc_auc_score, roc_curve
+import seaborn as sns
+
+
+from sklearn import metrics
+
+def plot_correlation_map(df):
+    corr = df.corr()
+    plt.figure(figsize=(12, 10))
+    cmap = sns.diverging_palette(220, 10, as_cmap=True)
+    sns.heatmap(
+        corr,
+        cmap=cmap,
+        square=True,
+        cbar_kws={'shrink': .9},
+        annot=True,
+        annot_kws={'fontsize': 7}
+    )
+    plt.show()
+
+data=pd.read_csv("titanic-passengers.csv",sep=";")
+#print(plot_correlation_map(data))
+print(data)
+
+data.isnull()
+data.isnull().sum()
+
+data['Age'].fillna(data['Age'].median(),inplace=True)
+data.Embarked = data.Embarked.fillna('S')
+
+Label_Sex={"Sex": {"male":0,"female":1}}
+data.replace(Label_Sex,inplace=True)
+
+Label_Survived={"Survived": {"Yes":1,"No":0}}
+data.replace(Label_Survived,inplace=True)
+
+print (data)
+
+def logreg_predict_passenger_will_survive(df):
+    # select relevant features
+    X = df[['Pclass', 'Age', 'Sex', 'Fare']]
+    y = df['Survived']
+
+    # split data into train and test sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+    # create and fit logistic regression model
+    logreg = LogisticRegression()
+    logreg.fit(X_train, y_train)
+
+    # predict on test set
+    y_pred = logreg.predict(X_test)
+
+    # evaluate performance
+    accuracy = accuracy_score(y_test, y_pred)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    print("Accuracy:", accuracy)
+    print("Confusion matrix:\n", conf_matrix)
+
+    # Generate confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+
+    # Display confusion matrix in heatmap
+    sns.heatmap(cm, annot=True, cmap='Blues', fmt='g')
+
+    # Show the plot
+    plt.show()
+    
+    # Calculate ROC AUC score and plot ROC curve
+    y_pred_prob = logreg.predict_proba(X_test)[:, 1]
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob)
+    auc = roc_auc_score(y_test, y_pred_prob)
+    print("ROC AUC Score:", auc)
+    plt.plot(fpr, tpr, label='ROC curve (area = %0.2f)' % auc)
+    plt.plot([0, 1], [0, 1], 'k--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate')
+    plt.ylabel('True Positive Rate')
+    plt.title('Receiver operating characteristic example')
+    plt.legend(loc="lower right")
+    plt.show()
+
+logreg_predict_passenger_will_survive(data)
+
+#question
+#Another validation matrix for classification is ROC / AUC. Do your research on them, explain them, and apply them in our case.
+ROC (Receiver Operating Characteristic) curve and AUC (Area Under the Curve) are evaluation metrics used in classification problems. The ROC curve is a plot of 
+True Positive Rate (TPR) against False Positive Rate (FPR) at different classification thresholds. TPR is the ratio of correctly predicted positive instances to 
+the total actual positive instances, while FPR is the ratio of incorrectly predicted negative instances to the total actual negative instances. AUC is the area 
+under the ROC curve, which measures the ability of a model to distinguish between positive and negative classes. The higher the AUC, the better the model's
+performance.
+
+To apply these metrics to our case, we can use the roc_curve and roc_auc_score functions from the sklearn.metrics library. 
+First, we need to calculate the probability estimates of the positive class using the predict_proba method of the logistic regression model.
+Then, we can calculate the FPR and TPR for different thresholds using the roc_curve function. Finally, we can plot the ROC curve and calculate the AUC using 
+the roc_auc_score function.
